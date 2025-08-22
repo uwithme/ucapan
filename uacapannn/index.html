@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kartu Ucapan Selamat</title>
+  <style>
+    :root{
+      --bg1:#f6f9ff; --bg2:#eef3ff; --txt:#0f172a; --muted:#64748b; --accent:#6366f1; --card:#ffffff; --ring:#c7d2fe;
+      --success:#22c55e; --warn:#f59e0b; --danger:#ef4444; --shadow: 0 10px 30px rgba(2,6,23,.12);
+    }
+    [data-theme="dark"]{
+      --bg1:#0b1220; --bg2:#0f172a; --txt:#e5e7eb; --muted:#94a3b8; --accent:#8b5cf6; --card:#0b1329; --ring:#312e81;
+      --shadow: 0 10px 30px rgba(2,6,23,.45);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--txt);
+      background: radial-gradient(1200px 800px at 10% -10%, var(--bg2), transparent),
+                  radial-gradient(1200px 800px at 90% 110%, var(--bg2), transparent),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100svh; display:grid; place-items:center; padding:24px;
+    }
+    .app{width:min(1100px, 100%); display:grid; grid-template-columns: 1.1fr .9fr; gap:20px}
+    @media (max-width: 900px){ .app{grid-template-columns:1fr; gap:16px} }
+
+    .panel{background: var(--card); border:1px solid color-mix(in oklab, var(--ring) 35%, transparent); border-radius: 20px; box-shadow:var(--shadow)}
+
+    .toolbar{display:flex; justify-content:space-between; align-items:center; padding:14px 18px}
+    .toolbar h1{font-size:clamp(18px, 2.3vw, 24px); margin:0}
+    .toolbar .actions{display:flex; gap:10px}
+    .btn{appearance:none; border:1px solid color-mix(in oklab, var(--accent) 30%, transparent); background:color-mix(in oklab, var(--accent) 10%, var(--card)); color:var(--txt); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn:hover{filter:brightness(1.05)}
+    .btn:active{transform:translateY(1px)}
+    .btn.ghost{background:transparent}
+    .btn.primary{background: var(--accent); color:white; border-color:var(--accent)}
+
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .field{display:flex; flex-direction:column; gap:6px}
+    .field label{font-size:14px; color:var(--muted)}
+    input, select, textarea{
+      background: color-mix(in oklab, var(--card), black 0%);
+      color:var(--txt); border:1px solid color-mix(in oklab, var(--ring) 45%, transparent);
+      border-radius:12px; padding:12px; outline:none; font:inherit;
+    }
+    textarea{min-height:120px; resize:vertical}
+
+    .designer{padding:16px}
+
+    .card-wrap{ perspective: 1400px; display:grid; place-items:center; padding: 28px }
+    .card{ width:min(520px, 100%); height:320px; position:relative; transform-style:preserve-3d; transition: transform .9s cubic-bezier(.2,.76,.2,1); }
+    .card.is-open{ transform: rotateY(-180deg); }
+
+    .card-face{
+      position:absolute; inset:0; border-radius: 20px; overflow:hidden; border:1px solid color-mix(in oklab, var(--ring) 45%, transparent);
+      box-shadow: var(--shadow); backface-visibility:hidden;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; gap:12px;
+    }
+    .front{ background: conic-gradient(from 180deg at 50% 50%, color-mix(in oklab, var(--accent) 25%, transparent), transparent 30%),
+                         linear-gradient(135deg, color-mix(in oklab, var(--accent) 18%, var(--card)), var(--card)); }
+    .front h2{ margin:0; font-size: clamp(22px, 4vw, 36px); color:white; text-shadow: 0 8px 28px rgba(0,0,0,.35)}
+    .front p{ color: #eef2ff; max-width: 34ch}
+
+    .inside{ background: linear-gradient(180deg, var(--card), color-mix(in oklab, var(--bg2) 70%, var(--card))); transform: rotateY(180deg); }
+    .inside h3{ margin:.2rem 0 .4rem; font-size: clamp(18px, 3vw, 24px) }
+    .inside p{ margin:.2rem 0; color: var(--muted); max-width: 46ch }
+
+    .footer{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+
+    .pill{ font-size:12px; padding:6px 10px; border-radius: 999px; border:1px dashed color-mix(in oklab, var(--ring) 45%, transparent); color: var(--muted) }
+
+    /* Confetti Canvas covers card area */
+    canvas#confetti{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:20px }
+
+    /* Print */
+    @media print{
+      body{ background:white }
+      .app{ display:block }
+      .panel:not(.printable){ display:none }
+      .card{ margin: 0 auto }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Editor Panel -->
+    <section class="panel printable">
+      <div class="toolbar">
+        <h1>🎉 Kartu Ucapan Selamat</h1>
+        <div class="actions">
+          <button class="btn ghost" id="themeBtn" title="Ubah tema">🌗 Tema</button>
+          <button class="btn" id="copyBtn" title="Salin teks ucapan">📋 Salin</button>
+          <button class="btn" id="printBtn" title="Cetak / Simpan PDF">🖨️ Cetak</button>
+        </div>
+      </div>
+
+      <div class="designer">
+        <div class="grid">
+          <div class="field">
+            <label for="recipient">Penerima</label>
+            <input id="recipient" placeholder="Contoh: Rani / Tim IT / Sahabatku" />
+          </div>
+          <div class="field">
+            <label for="sender">Pengirim</label>
+            <input id="sender" placeholder="Namamu" />
+          </div>
+          <div class="field">
+            <label for="template">Pilih Tema Ucapan</label>
+            <select id="template">
+              <option value="ulangtahun">Selamat Ulang Tahun</option>
+              <option value="wisuda">Selamat Wisuda</option>
+              <option value="kerja">Pekerjaan Baru</option>
+              <option value="umum" selected>Selamat & Apresiasi</option>
+              <option value="tahunbaru">Tahun Baru</option>
+              <option value="kustom">Kustom</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="accent">Warna Aksen</label>
+            <input id="accent" type="color" value="#6366f1" />
+          </div>
+          <div class="field" style="grid-column:1/-1">
+            <label for="message">Pesan</label>
+            <textarea id="message" placeholder="Tulis pesan ucapan di sini..."></textarea>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap">
+          <button class="btn primary" id="openCard">Buka Kartu</button>
+          <button class="btn" id="confettiBtn">🎊 Konfeti</button>
+          <button class="btn ghost" id="resetBtn">↺ Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card Preview -->
+    <section class="panel">
+      <div class="card-wrap">
+        <div class="card" id="card">
+          <div class="card-face front">
+            <h2 id="frontTitle">Selamat! ✨</h2>
+            <p id="frontSubtitle">Klik "Buka Kartu" untuk melihat isi ucapan.</p>
+            <div class="footer">
+              <span class="pill" id="pillRecipient">Untuk: …</span>
+              <span class="pill" id="pillSender">Dari: …</span>
+            </div>
+            <canvas id="confetti"></canvas>
+          </div>
+          <div class="card-face inside">
+            <h3 id="insideGreeting">Halo, <span id="nameInline">Sahabat</span>! 🎁</h3>
+            <p id="insideMessage">Semoga hari ini membawa kabar baik dan pencapaian baru. Terima kasih sudah jadi pribadi hebat! 🌟</p>
+            <p style="margin-top:8px">— <strong id="fromName">Anonim</strong></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const el = sel => document.querySelector(sel);
+    const recipient = el('#recipient');
+    const sender = el('#sender');
+    const template = el('#template');
+    const message = el('#message');
+    const accent = el('#accent');
+
+    const frontTitle = el('#frontTitle');
+    const frontSubtitle = el('#frontSubtitle');
+    const pillRecipient = el('#pillRecipient');
+    const pillSender = el('#pillSender');
+
+    const nameInline = el('#nameInline');
+    const insideMessage = el('#insideMessage');
+    const fromName = el('#fromName');
+
+    const card = el('#card');
+
+    const presets = {
+      ulangtahun: (n)=>({
+        title:`Selamat Ulang Tahun! 🎂`,
+        subtitle:`Semoga tahun ini penuh tawa, sehat, dan doa yang terkabul.`,
+        msg:`${n?`Halo ${n}, `:''}semoga umur yang baru membawa kebijaksanaan, keberanian, dan kesempatan baik. Nikmati hari spesialmu! 🥳`}),
+      wisuda: (n)=>({
+        title:`Selamat Wisuda! 🎓`,
+        subtitle:`Akhir yang manis, awal yang gemilang.`,
+        msg:`${n?`Bangga padamu, ${n}! `:''}Perjalananmu menginspirasi. Semoga langkah berikutnya penuh berkah dan peluang besar.`}),
+      kerja: (n)=>({
+        title:`Selamat atas Pekerjaan Baru! 💼`,
+        subtitle:`Bab baru, tantangan baru.`,
+        msg:`${n?`${n}, `:''}semoga cepat beradaptasi, bertumbuh, dan bersinar di tempat baru. Kamu pasti bisa!`}),
+      umum: (n)=>({
+        title:`Selamat! ✨`,
+        subtitle:`Kerja kerasmu layak dirayakan.`,
+        msg:`${n?`Hai ${n}! `:''}Terima kasih sudah memberikan yang terbaik. Semoga sukses selalu menyertaimu.`}),
+      tahunbaru: (n)=>({
+        title:`Selamat Tahun Baru! 🎆`,
+        subtitle:`Lembaran baru, semangat baru.`,
+        msg:`${n?`${n}, `:''}semoga tahun yang datang membawa kesehatan, kebahagiaan, dan rezeki berlimpah.`}),
+      kustom: (n)=>({
+        title:`Kartu Ucapan ✍️`,
+        subtitle:`Tulis pesanmu dengan tulus.`,
+        msg:`${n?`Halo ${n}, `:''}`})
+    };
+
+    function applyPreset(){
+      const n = recipient.value.trim();
+      const p = presets[template.value](n);
+      if(!message.value || template.value !== 'kustom') message.value = p.msg;
+      frontTitle.textContent = p.title;
+      frontSubtitle.textContent = p.subtitle;
+      nameInline.textContent = n || 'Sahabat';
+      pillRecipient.textContent = `Untuk: ${n||'…'}`;
+      pillSender.textContent = `Dari: ${sender.value.trim()||'…'}`;
+      insideMessage.textContent = message.value.trim() || p.msg;
+      fromName.textContent = sender.value.trim() || 'Anonim';
+    }
+
+    function flip(){ card.classList.toggle('is-open'); runConfetti(); }
+
+    // Theme toggle
+    const themeBtn = el('#themeBtn');
+    themeBtn.addEventListener('click', ()=>{
+      const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+      document.documentElement.setAttribute('data-theme', isDark? 'light':'dark');
+    });
+
+    // Copy & Print
+    el('#copyBtn').addEventListener('click', ()=>{
+      const text = `${frontTitle.textContent}\n\nHalo ${nameInline.textContent},\n${insideMessage.textContent}\n\n— ${fromName.textContent}`;
+      navigator.clipboard.writeText(text).then(()=>{
+        alert('Teks ucapan disalin!');
+      });
+    });
+    el('#printBtn').addEventListener('click', ()=> window.print());
+
+    // Inputs
+    [recipient, sender, template, message].forEach(inp=> inp.addEventListener('input', applyPreset));
+    accent.addEventListener('input', ()=>{
+      document.documentElement.style.setProperty('--accent', accent.value);
+      applyPreset();
+    });
+
+    el('#openCard').addEventListener('click', flip);
+    el('#resetBtn').addEventListener('click', ()=>{
+      recipient.value=''; sender.value=''; template.value='umum'; message.value=''; accent.value='#6366f1';
+      document.documentElement.style.setProperty('--accent', '#6366f1');
+      card.classList.remove('is-open');
+      applyPreset();
+    });
+
+    // Confetti
+    const canvas = el('#confetti');
+    const ctx = canvas.getContext('2d');
+    function resize(){
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+    }
+    window.addEventListener('resize', resize, {passive:true});
+    resize();
+
+    let pieces=[]; let animId=null; let burstEnd=0;
+    function makePiece(){
+      const w = canvas.width, h = canvas.height;
+      return {
+        x: Math.random()*w,
+        y: -10 * devicePixelRatio,
+        r: (6+Math.random()*8) * devicePixelRatio,
+        s: (1+Math.random()*2) * devicePixelRatio,
+        a: Math.random()*Math.PI*2,
+        vy: (3+Math.random()*4) * devicePixelRatio,
+        vx: (-2+Math.random()*4) * devicePixelRatio,
+        rot: Math.random()*Math.PI,
+        vr: (-0.1+Math.random()*0.2)
+      };
+    }
+    function draw(){
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+      pieces.forEach(p=>{
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vy += 0.05 * devicePixelRatio;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = randomColor();
+        ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r);
+        ctx.restore();
+      });
+      pieces = pieces.filter(p=> p.y < h+20*devicePixelRatio);
+      if(Date.now() < burstEnd || pieces.length){ animId = requestAnimationFrame(draw); }
+      else { cancelAnimationFrame(animId); animId=null; }
+    }
+    function randomColor(){
+      const c = ['#22c55e','#3b82f6','#ef4444','#f59e0b','#8b5cf6','#10b981','#eab308'];
+      return c[(Math.random()*c.length)|0];
+    }
+    function runConfetti(duration=1500){
+      burstEnd = Date.now()+duration;
+      const spawn = ()=>{
+        if(Date.now() < burstEnd){
+          for(let i=0;i<20;i++) pieces.push(makePiece());
+          setTimeout(spawn, 60);
+        }
+      };
+      spawn();
+      if(!animId) draw();
+    }
+    el('#confettiBtn').addEventListener('click', ()=> runConfetti());
+
+    // init
+    applyPreset();
+  </script>
+</body>
+</html>
